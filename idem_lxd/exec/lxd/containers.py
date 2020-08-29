@@ -1,4 +1,6 @@
+import pylxd
 from typing import List
+
 
 __func_alias__ = {"list_": "list"}
 
@@ -12,52 +14,56 @@ async def list_(
     status = all will return all containers regardless of running status
     """
     ret = []
-    containers = ctx["acct"]["session"].containers.all()
+    try:
+        containers = ctx["acct"]["session"].containers.all()
+    except pylxd.exceptions.LXDAPIException as e:
+        if "not authorized" in str(e):
+            return {"error": str(e)}
     for container in containers:
         item = await _get_container_info(container)
         ret.append(item)
-    return True, {"instances": ret}
+    return {"instances": ret}
 
 
 async def get(hub, ctx, name: str):
     if not ctx["acct"]["session"].containers.exists(name):
-        return False, "{} does not exist".format(name)
+        return {"error": 'Instance: "{}" does not exist'.format(name)}
     container = ctx["acct"]["session"].containers.get(name)
-    return True, container.expanded_config
+    return {name: container.expanded_config}
 
 
 async def start(hub, ctx, name: str, wait=False):
     if not ctx["acct"]["session"].containers.exists(name):
-        return False, "{} does not exist".format(name)
+        return {"error": 'Instance: "{}" does not exist'.format(name)}
     container = ctx["acct"]["session"].containers.get(name)
     container.start(wait=wait)
     if wait:
-        return True, container.status
+        return {"status": container.status}
     else:
-        return True, "Starting"
+        return {"status": "Starting"}
 
 
 async def stop(hub, ctx, name: str, wait=False):
     if not ctx["acct"]["session"].containers.exists(name):
-        return False, "{} does not exist".format(name)
+        return {"error": 'Instance: "{}" does not exist'.format(name)}
     container = ctx["acct"]["session"].containers.get(name)
     container.stop(wait=wait)
     if wait:
-        return True, container.status
+        return {"status": container.status}
     else:
-        return True, "Stopping"
+        return {"status": "Stopping"}
 
 
 async def status(hub, ctx, name: str):
     if not ctx["acct"]["session"].containers.exists(name):
-        return False, "{} does not exist".format(name)
+        return {"error": 'Instance: "{}" does not exist'.format(name)}
     container = ctx["acct"]["session"].containers.get(name)
-    return True, container.status
+    return {"status": container.status}
 
 
 async def create(hub, ctx, name: str, image: str, wait=False):
     if ctx["acct"]["session"].containers.exists(name):
-        return True, "{} already exists".format(name)
+        return {"status": 'Instance: "{}" already exists'.format(name)}
     config = {}
     config["name"] = name
     config["source"] = {}
@@ -66,20 +72,20 @@ async def create(hub, ctx, name: str, image: str, wait=False):
 
     container = ctx["acct"]["session"].containers.create(config, wait=wait)
     if wait:
-        return True, container.status
+        return {"status": container.status}
     else:
-        return True, "Creating image: {}".format(name)
+        return {"status": "Creating image: {}".format(name)}
 
 
 async def delete(hub, ctx, name: str, wait=False):
     if not ctx["acct"]["session"].containers.exists(name):
-        return False, "{} does not exist".format(name)
+        return {"error": 'Instance: "{}" does not exist'.format(name)}
     container = ctx["acct"]["session"].containers.get(name)
     container.delete(wait=wait)
     if wait:
-        return True, container.status
+        return {"status": container.status}
     else:
-        return True, "Deleting container: {}".format(name)
+        return {"status": "Deleting container: {}".format(name)}
 
 
 async def _get_container_info(container):

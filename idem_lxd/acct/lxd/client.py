@@ -22,7 +22,6 @@ async def gather(hub) -> Dict[str, Any]:
     """
     sub_profiles = {}
     for profile, ctx in hub.acct.PROFILES.get("lxd.client", {}).items():
-        # TODO if client isn't trusted, reauth
         sub_profiles[profile] = {
             "password": ctx["password"],
             "session": pylxd.Client(
@@ -34,6 +33,14 @@ async def gather(hub) -> Dict[str, Any]:
 
         # If client isn't trusted, try to authenticate.
         if not sub_profiles[profile]["session"].trusted:
-            sub_profiles[profile]["session"].authenticate(ctx["password"])
+            try:
+                sub_profiles[profile]["session"].authenticate(ctx["password"])
+            except pylxd.exceptions.LXDAPIException as e:
+                if "not authorized" in str(e):
+                    # the following line should be a log
+                    print(
+                        'Authentication failed for "{}" profile: {}'.format(profile, e)
+                    )
+                    continue
 
     return sub_profiles
