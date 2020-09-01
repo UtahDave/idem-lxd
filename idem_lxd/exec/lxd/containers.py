@@ -41,9 +41,9 @@ async def get(hub, ctx, name: str):
 
         idem exec lxd.containers.get container01
     """
-    if not ctx["acct"]["session"].containers.exists(name):
-        return {"error": 'Instance: "{}" does not exist'.format(name)}
-    container = ctx["acct"]["session"].containers.get(name)
+    container = await hub.tool.lxd.api.request(ctx, "containers", "get", name=name)
+    if "error" in container:
+        return container
     return {name: container.expanded_config}
 
 
@@ -57,14 +57,17 @@ async def start(hub, ctx, name: str, wait=False):
 
         idem exec lxd.containers.start container01
     """
-    if not ctx["acct"]["session"].containers.exists(name):
-        return {"error": 'Instance: "{}" does not exist'.format(name)}
-    container = ctx["acct"]["session"].containers.get(name)
+    container = await hub.tool.lxd.api.request(ctx, "containers", "get", name=name)
+    if "error" in container:
+        return container
+
+    if "Running" in container.status:
+        return {"status": container.status}
+
     container.start(wait=wait)
     if wait:
         return {"status": container.status}
-    else:
-        return {"status": "Starting"}
+    return {"status": "Starting"}
 
 
 async def stop(hub, ctx, name: str, wait=False):
@@ -77,14 +80,17 @@ async def stop(hub, ctx, name: str, wait=False):
 
         idem exec lxd.containers.stop container01
     """
-    if not ctx["acct"]["session"].containers.exists(name):
-        return {"error": 'Instance: "{}" does not exist'.format(name)}
-    container = ctx["acct"]["session"].containers.get(name)
+    container = await hub.tool.lxd.api.request(ctx, "containers", "get", name=name)
+    if "error" in container:
+        return container
+
+    if "Stopped" in container.status:
+        return {"status": container.status}
+
     container.stop(wait=wait)
     if wait:
         return {"status": container.status}
-    else:
-        return {"status": "Stopping"}
+    return {"status": "Stopping"}
 
 
 async def status(hub, ctx, name: str):
@@ -97,9 +103,9 @@ async def status(hub, ctx, name: str):
 
         idem exec lxd.containers.status container01
     """
-    if not ctx["acct"]["session"].containers.exists(name):
-        return {"error": 'Instance: "{}" does not exist'.format(name)}
-    container = ctx["acct"]["session"].containers.get(name)
+    container = await hub.tool.lxd.api.request(ctx, "containers", "get", name=name)
+    if "error" in container:
+        return container
     return {"status": container.status}
 
 
@@ -114,7 +120,7 @@ async def create(hub, ctx, name: str, image: str, wait=False):
         idem exec lxd.containers.create container01 centos7
         idem exec lxd.containers.create container01 centos7 wait=True
     """
-    if ctx["acct"]["session"].containers.exists(name):
+    if await hub.tool.lxd.api.request(ctx, "containers", "exists", name=name):
         return {"status": 'Instance: "{}" already exists'.format(name)}
     config = {}
     config["name"] = name
@@ -122,11 +128,12 @@ async def create(hub, ctx, name: str, image: str, wait=False):
     config["source"]["type"] = "image"
     config["source"]["alias"] = image
 
-    container = ctx["acct"]["session"].containers.create(config, wait=wait)
-    if wait:
-        return {"status": container.status}
-    else:
-        return {"status": "Creating image: {}".format(name)}
+    container = await hub.tool.lxd.api.request(
+        ctx, "containers", "create", config=config
+    )
+    if "error" in container:
+        return container
+    return {"status": "Creating container: {}".format(name)}
 
 
 async def delete(hub, ctx, name: str, wait=False):
@@ -140,14 +147,11 @@ async def delete(hub, ctx, name: str, wait=False):
         idem exec lxd.containers.delete container01
         idem exec lxd.containers.delete container01 wait=True
     """
-    if not ctx["acct"]["session"].containers.exists(name):
-        return {"error": 'Instance: "{}" does not exist'.format(name)}
-    container = ctx["acct"]["session"].containers.get(name)
+    container = await hub.tool.lxd.api.request(ctx, "containers", "get", name=name)
+    if "error" in container:
+        return container
     container.delete(wait=wait)
-    if wait:
-        return {"status": container.status}
-    else:
-        return {"status": "Deleting container: {}".format(name)}
+    return {"status": "Deleting container: {}".format(name)}
 
 
 async def _get_container_info(container):

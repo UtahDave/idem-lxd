@@ -20,5 +20,11 @@ async def request(
     except pylxd.exceptions.LXDAPIException as e:
         if "not authorized" in str(e):
             return {"error": str(e)}
+        elif "not found" in str(e):
+            return {
+                "error": '{}: "{}" does not exist. "{}"'.format(
+                    resource, kwargs.get("name"), str(e)
+                )
+            }
         else:
             raise
