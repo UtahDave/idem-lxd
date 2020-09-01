@@ -21,10 +21,6 @@ async def request(
         if "not authorized" in str(e):
             return {"error": str(e)}
         elif "not found" in str(e):
-            return {
-                "error": '{}: "{}" does not exist. "{}"'.format(
-                    resource, kwargs.get("name"), str(e)
-                )
-            }
+            return {"error": '{}: Does not exist. "{}"'.format(resource, str(e))}
         else:
             raise

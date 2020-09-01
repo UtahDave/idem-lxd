@@ -2,7 +2,6 @@
 """
 Manage LXD images
 """
-import pylxd
 from typing import List
 
 __func_alias__ = {"list_": "list"}
@@ -18,7 +17,9 @@ async def list_(hub, ctx):
 
         idem exec lxd.images.list
     """
-    images = ctx["acct"]["session"].images.all()
+    images = await hub.tool.lxd.api.request(ctx, "images", "all")
+    if "error" in images:
+        return images
     ret = []
     for image in images:
         item = await _get_image_info(image)
@@ -36,11 +37,9 @@ async def get_by_alias(hub, ctx, name: str):
 
         idem exec lxd.images.get_by_alias centos7
     """
-
-    try:
-        image = ctx["acct"]["session"].images.get_by_alias(name)
-    except pylxd.exceptions.NotFound:
-        return "Image not found"
+    image = await hub.tool.lxd.api.request(ctx, "images", "get_by_alias", alias=name)
+    if "error" in image:
+        return image
     return await _get_image_info(image)
 
 
@@ -54,10 +53,9 @@ async def get(hub, ctx, name):
 
         idem exec lxd.images.get f603184f60a0f9cfe6641b33596edcb27e7852e6795cbd3cc06cfc3fdd647512
     """
-    try:
-        image = ctx["acct"]["session"].images.get(name)
-    except pylxd.exceptions.NotFound:
-        return "Image not found"
+    image = await hub.tool.lxd.api.request(ctx, "images", "get", fingerprint=name)
+    if "error" in image:
+        return image
     return await _get_image_info(image)
 
 

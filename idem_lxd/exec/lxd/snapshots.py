@@ -16,7 +16,9 @@ async def list_(hub, ctx, name: str):
         idem exec lxd.snapshots.list container01
     """
     ret = []
-    container = ctx["acct"]["session"].containers.get(name)
+    container = await hub.tool.lxd.api.request(ctx, "containers", "get", name=name)
+    if "error" in container:
+        return container
     snapshots = container.snapshots.all()
     for snap in snapshots:
         item = await _get_snapshot_info(snap)

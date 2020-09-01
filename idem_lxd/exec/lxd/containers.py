@@ -2,7 +2,6 @@
 """
 Manage LXD containers
 """
-import pylxd
 from typing import List
 
 
