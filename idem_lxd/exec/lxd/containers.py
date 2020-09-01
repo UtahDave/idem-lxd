@@ -22,11 +22,9 @@ async def list_(
         idem exec lxd.containers.list
     """
     ret = []
-    try:
-        containers = ctx["acct"]["session"].containers.all()
-    except pylxd.exceptions.LXDAPIException as e:
-        if "not authorized" in str(e):
-            return {"error": str(e)}
+    containers = await hub.tool.lxd.api.request(ctx, "containers", "all")
+    if "error" in containers:
+        return containers
     for container in containers:
         item = await _get_container_info(container)
         ret.append(item)
