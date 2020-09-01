@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+"""
+Manage LXD containers
+"""
 import pylxd
 from typing import List
 
@@ -11,7 +15,11 @@ async def list_(
     """
     List all running containers
 
-    status = all will return all containers regardless of running status
+    CLI Example:
+
+    .. code-block:: bash
+
+        idem exec lxd.containers.list
     """
     ret = []
     try:
@@ -26,6 +34,15 @@ async def list_(
 
 
 async def get(hub, ctx, name: str):
+    """
+    Get a container's information.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        idem exec lxd.containers.get container01
+    """
     if not ctx["acct"]["session"].containers.exists(name):
         return {"error": 'Instance: "{}" does not exist'.format(name)}
     container = ctx["acct"]["session"].containers.get(name)
@@ -33,6 +50,15 @@ async def get(hub, ctx, name: str):
 
 
 async def start(hub, ctx, name: str, wait=False):
+    """
+    Start a container
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        idem exec lxd.containers.start container01
+    """
     if not ctx["acct"]["session"].containers.exists(name):
         return {"error": 'Instance: "{}" does not exist'.format(name)}
     container = ctx["acct"]["session"].containers.get(name)
@@ -44,6 +70,15 @@ async def start(hub, ctx, name: str, wait=False):
 
 
 async def stop(hub, ctx, name: str, wait=False):
+    """
+    Stop a container
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        idem exec lxd.containers.stop container01
+    """
     if not ctx["acct"]["session"].containers.exists(name):
         return {"error": 'Instance: "{}" does not exist'.format(name)}
     container = ctx["acct"]["session"].containers.get(name)
@@ -55,6 +90,15 @@ async def stop(hub, ctx, name: str, wait=False):
 
 
 async def status(hub, ctx, name: str):
+    """
+    Get a container's status
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        idem exec lxd.containers.status container01
+    """
     if not ctx["acct"]["session"].containers.exists(name):
         return {"error": 'Instance: "{}" does not exist'.format(name)}
     container = ctx["acct"]["session"].containers.get(name)
@@ -62,6 +106,16 @@ async def status(hub, ctx, name: str):
 
 
 async def create(hub, ctx, name: str, image: str, wait=False):
+    """
+    Create a new container.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        idem exec lxd.containers.create container01 centos7
+        idem exec lxd.containers.create container01 centos7 wait=True
+    """
     if ctx["acct"]["session"].containers.exists(name):
         return {"status": 'Instance: "{}" already exists'.format(name)}
     config = {}
@@ -78,6 +132,16 @@ async def create(hub, ctx, name: str, image: str, wait=False):
 
 
 async def delete(hub, ctx, name: str, wait=False):
+    """
+    Delete container.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        idem exec lxd.containers.delete container01
+        idem exec lxd.containers.delete container01 wait=True
+    """
     if not ctx["acct"]["session"].containers.exists(name):
         return {"error": 'Instance: "{}" does not exist'.format(name)}
     container = ctx["acct"]["session"].containers.get(name)
@@ -90,7 +154,7 @@ async def delete(hub, ctx, name: str, wait=False):
 
 async def _get_container_info(container):
     """
-    Collect container info
+    Collect and format container info
     """
     item = {}
     item[container.name] = {}

@@ -1,9 +1,19 @@
+# -*- coding: utf-8 -*-
+"""
+Manage LXD container snapshots
+"""
 __func_alias__ = {"list_": "list"}
 
 
 async def list_(hub, ctx, name: str):
     """
     List all snapshots for a container
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        idem exec lxd.snapshots.list container01
     """
     ret = []
     container = ctx["acct"]["session"].containers.get(name)
