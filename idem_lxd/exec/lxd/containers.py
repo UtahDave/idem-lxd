@@ -2,6 +2,7 @@
 """
 Manage LXD containers
 """
+import pylxd
 from typing import List
 
 
@@ -135,7 +136,7 @@ async def create(hub, ctx, name: str, image: str, wait=False):
     return {"status": "Creating container: {}".format(name)}
 
 
-async def delete(hub, ctx, name: str, wait=False):
+async def delete(hub, ctx, name: str, wait=False, force=False):
     """
     Delete container.
 
@@ -149,7 +150,17 @@ async def delete(hub, ctx, name: str, wait=False):
     container = await hub.tool.lxd.api.request(ctx, "containers", "get", name=name)
     if "error" in container:
         return container
-    container.delete(wait=wait)
+    if force and ("Running" in container.status):
+        await stop(hub, ctx, name, wait=True)
+    try:
+        container.delete(wait=wait)
+    except pylxd.exceptions.LXDAPIException as e:
+        if "is running" in str(e):
+            return {
+                "error": "{} is running. Use 'force=True' to force deletion.".format(
+                    name
+                )
+            }
     return {"status": "Deleting container: {}".format(name)}
 
 
