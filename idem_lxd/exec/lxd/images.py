@@ -64,14 +64,17 @@ async def _get_image_info(image):
     Return image info
     """
     item = {}
-    item[image.fingerprint] = {}
-    item[image.fingerprint]["fingerprint"] = image.fingerprint
-    item[image.fingerprint]["public"] = image.public
-    item[image.fingerprint]["arch"] = image.architecture
-    item[image.fingerprint]["size"] = image.size
-    item[image.fingerprint]["upload_date"] = image.uploaded_at
     names = []
     for alias in image.aliases:
         names.append(alias["name"])
-    item[image.fingerprint]["aliases"] = names
+    name = image.fingerprint
+    if len(names) > 0:
+        name = names[0]
+    item[name] = {}
+    item[name]["fingerprint"] = image.fingerprint
+    item[name]["public"] = image.public
+    item[name]["properties"] = image.properties
+    item[name]["size"] = image.size
+    item[name]["upload_date"] = image.uploaded_at
+    item[name]["aliases"] = names
     return item
