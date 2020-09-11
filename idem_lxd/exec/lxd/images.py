@@ -2,6 +2,7 @@
 """
 Manage LXD images
 """
+import pylxd
 from typing import List
 
 __func_alias__ = {"list_": "list"}
@@ -65,6 +66,8 @@ async def _get_image_info(image):
     """
     item = {}
     names = []
+    # print(dir(image))
+    # return True
     for alias in image.aliases:
         names.append(alias["name"])
     name = image.fingerprint
@@ -73,8 +76,66 @@ async def _get_image_info(image):
     item[name] = {}
     item[name]["fingerprint"] = image.fingerprint
     item[name]["public"] = image.public
+    item[name]["auto_update"] = image.auto_update
     item[name]["properties"] = image.properties
     item[name]["size"] = image.size
     item[name]["upload_date"] = image.uploaded_at
     item[name]["aliases"] = names
     return item
+
+
+async def copy_from(hub, ctx, alias, server=None, public=False, auto_update=False):
+    """
+    Copy an image from a remote simplestream server
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        idem exec lxd.images.copy_from 'alpine/3.11'
+        idem exec lxd.images.copy_from 'alpine/3.11' public=True auto_update=True
+    """
+    if not server:
+        server = "https://images.linuxcontainers.org"
+    if await hub.tool.lxd.api.request(
+        ctx, "images", "exists", fingerprint=alias, alias=True
+    ):
+        return {"status": 'Image: "{}" already exists'.format(alias)}
+    image = await hub.tool.lxd.api.request(
+        ctx,
+        "images",
+        "create_from_simplestreams",
+        server=server,
+        alias=alias,
+        public=public,
+        auto_update=auto_update,
+    )
+    if "error" in image:
+        return image
+    for item in image.aliases:
+        if alias == item["name"]:
+            return await _get_image_info(image)
+    image.add_alias(alias, alias)
+    return await _get_image_info(image)
+
+
+async def delete(hub, ctx, alias, wait=False):
+    """
+    Delete an image using an Alias
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        idem exec lxd.images.delete 'debian/11'
+    """
+    image = await hub.tool.lxd.api.request(ctx, "images", "get_by_alias", alias=alias)
+    if "error" in image:
+        return image
+    image.delete(wait=wait)
+    if wait:
+        if not await hub.tool.lxd.api.request(
+            ctx, "images", "exists", fingerprint=alias, alias=True
+        ):
+            return {"status": 'Image: "{}" has been deleted.'.format(alias)}
+    return {"status": "Deleting image: {}".format(alias)}
