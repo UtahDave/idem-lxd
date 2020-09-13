@@ -1,16 +1,16 @@
 import pytest
 
+IMAGE_ALIAS = "alpine/3.10"
+
 
 @pytest.mark.asyncio
 async def test_create(hub, ctx):
     # currently this is hard coded to download and use the "alpine/3.11" image.
     # TODO: create a fixture to make sure the correct image exists
-    image = await hub.exec.lxd.images.copy_from(ctx, "alpine/3.11")
-    assert "alpine/3.11" in image
+    image = await hub.exec.lxd.images.copy_from(ctx, IMAGE_ALIAS)
+    assert IMAGE_ALIAS in image
 
-    container = await hub.exec.lxd.containers.create(
-        ctx, "testlxdcreate", "alpine/3.11"
-    )
+    container = await hub.exec.lxd.containers.create(ctx, "testlxdcreate", IMAGE_ALIAS)
     assert "Creating container: testlxdcreate" in container["status"]
 
 
@@ -39,5 +39,5 @@ async def test_stop(hub, ctx):
 async def test_delete(hub, ctx):
     container = await hub.exec.lxd.containers.delete(ctx, "testlxdcreate")
     assert "Deleting container: testlxdcreate" in container["status"]
-    image = await hub.exec.lxd.images.delete(ctx, "alpine/3.11", wait=True)
+    image = await hub.exec.lxd.images.delete(ctx, IMAGE_ALIAS, wait=True)
     assert "has been deleted" in image["status"]
