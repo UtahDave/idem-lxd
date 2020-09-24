@@ -51,6 +51,12 @@ Usage:
         cert: /home/boucha/lxd/lxd.crt
         key: /home/boucha/lxd/lxd.key
         verify: False
+      test_development_idem_lxd:
+        endpoint: https://localhost:8443
+        password: <password>
+        cert: /home/boucha/lxd/lxd.crt
+        key: /home/boucha/lxd/lxd.key
+        verify: False
 
 
 * Now let's use the `acct` tool to encrypt our creds file.
@@ -97,3 +103,43 @@ edit the file and re-encrypt the file easily with the following command.
 .. code-block:: bash
 
     acct --acct-key=$ACCT_KEY demo_config.yaml
+
+
+idem container state example
+============================
+
+The following example assumes local container image named `ubuntu1804` exists.
+Create a file named `~/present.sls`
+
+.. code-block:: yaml
+
+    Create container01:
+      lxd.containers.present:
+        - name: container01
+        - image: ubuntu1804
+
+Now run the following:
+
+.. code-block:: bash
+
+    idem state ~/present.sls
+    --------
+          ID: Create container01
+    Function: lxd.containers.present
+      Result: True
+     Comment: Container "container01" was created
+     Changes: new:
+        Creating container: container01
+
+
+
+Run idem-lxd tests
+==================
+
+Make sure you have a valid acct profile named `test_development_idem_lxd`.
+Then run the following from the root of the idem-lxd git repo.
+
+
+.. code-block:: bash
+
+    pytest tests
